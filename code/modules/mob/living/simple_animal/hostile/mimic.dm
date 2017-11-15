@@ -37,6 +37,7 @@
 	stop_automated_movement = 1
 	wander = 0
 	var/attempt_open = FALSE
+	var/datum/action/innate/mimic/root/R
 
 // Pickup loot
 /mob/living/simple_animal/hostile/mimic/crate/Initialize(mapload)
@@ -46,7 +47,7 @@
 		for(var/obj/item/I in loc)
 			I.loc = src
 
-	var/datum/action/innate/mimic/root/R = new
+	R = new
 	R.Grant(src)
 
 /mob/living/simple_animal/hostile/mimic/crate/DestroySurroundings()
@@ -95,7 +96,9 @@
 	for(var/obj/O in src)
 		O.loc = C
 	..()
-
+//Attacked by
+//If we are rooted
+//Deal 80 brute to the attacker
 GLOBAL_LIST_INIT(protected_objects, list(/obj/structure/table, /obj/structure/cable, /obj/structure/window))
 
 /mob/living/simple_animal/hostile/mimic/copy
@@ -280,7 +283,7 @@ GLOBAL_LIST_INIT(protected_objects, list(/obj/structure/table, /obj/structure/ca
 	var/mob/living/simple_animal/hostile/mimic/crate/S = owner
 
 	if(S.attempt_open)
-		S.visible_message("<span class='danger'><b>[S]</b> disguises itself as a crate</span>")
+		S.visible_message("<span class='userdanger'><b>[S]</b> rattles intensely before falling selent!</span>")
 
 		S.attempt_open = FALSE
 		S.icon_state = "crate"
