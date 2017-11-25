@@ -30,13 +30,14 @@
 	gold_core_spawnable = 1
 	del_on_death = 1
 
-// Aggro when you try to open them. Will also pickup loot when spawns and drop it when dies.
+// aggro when you try to open them. Will also pickup loot when spawns and drop it when dies.
 /mob/living/simple_animal/hostile/mimic/crate
 	attacktext = "bites"
 	speak_emote = list("clatters")
 	stop_automated_movement = 1
 	wander = 0
-	var/attempt_open = FALSE
+	var/rooted = TRUE 		//False = we are pissed
+							 //True = rooted
 	var/datum/action/innate/mimic/root/R
 
 // Pickup loot
@@ -58,7 +59,7 @@
 		icon_state = initial(icon_state)
 
 /mob/living/simple_animal/hostile/mimic/crate/ListTargets()
-	if(attempt_open)
+	if(rooted)
 		return ..()
 	return ..(1)
 
@@ -78,13 +79,24 @@
 					"<span class='userdanger'>\The [src] knocks you down!</span>")
 
 /mob/living/simple_animal/hostile/mimic/crate/proc/trigger()
-	if(!attempt_open)
+	if(!rooted)
 		visible_message("<b>[src]</b> starts to move!")
-		attempt_open = TRUE
+		rooted = TRUE
 
 /mob/living/simple_animal/hostile/mimic/crate/adjustHealth(amount, updating_health = TRUE, forced = FALSE)
 	trigger()
 	. = ..()
+
+//I have no doubt that Cyberboss knows a better way to do this, I'm going to have Cyberboss tell me!
+/mob/living/simple_animal/hostile/mimic/crate/attackby(obj/item/I, mob/living/user, params)
+	. = ..()
+	visible_message("Attackby has been called")
+	attack_hand(user)
+
+/mob/living/simple_animal/hostile/mimic/crate/attack_hand(mob/living/user)
+	. = ..()
+	visible_message("attack_hand has been called")
+	user.apply_damage(5, BRUTE)
 
 /mob/living/simple_animal/hostile/mimic/crate/LoseTarget()
 	..()
@@ -282,10 +294,19 @@ GLOBAL_LIST_INIT(protected_objects, list(/obj/structure/table, /obj/structure/ca
 /datum/action/innate/mimic/root/Activate()
 	var/mob/living/simple_animal/hostile/mimic/crate/S = owner
 
-	if(S.attempt_open)
+	if(S.rooted) //So long as we are not in that state
 		S.visible_message("<span class='userdanger'><b>[S]</b> rattles intensely before falling selent!</span>")
 
-		S.attempt_open = FALSE
-		S.icon_state = "crate"
+		S.rooted = FALSE
+		S.icon_state = "crate"	//Change our icon back to camoflauge.
 		S.icon_living = "crate"
+		S.speed = -1
+		S.notransform = TRUE
+		S.density = TRUE
+		return
+		//TODO: Add the other case, when we are allready in that state.
+
+	if(!S.rooted) //We are allready in that state
+		to_chat(S,"You are allready rooted in place!")
+
 
