@@ -36,7 +36,7 @@
 	speak_emote = list("clatters")
 	stop_automated_movement = 1
 	wander = 0
-	var/rooted = TRUE 		//False = we are pissed
+	var/rooted = FALSE 		//False = we are pissed
 							 //True = rooted
 	var/datum/action/innate/mimic/root/R
 
@@ -59,14 +59,16 @@
 		icon_state = initial(icon_state)
 
 /mob/living/simple_animal/hostile/mimic/crate/ListTargets()
-	if(rooted)
-		return ..()
-	return ..(1)
+	if(rooted)	//If we are rooted, then don't aggro.
+		return FALSE
+	return ..()
+	//The old code was:
+	// If (rooted): return ..() outside return ..(1)
 
 /mob/living/simple_animal/hostile/mimic/crate/FindTarget()
 	. = ..()
-	if(.)
-		trigger()
+	if(!rooted)//If we are not rooted
+		visible_message("<b>[src]</b> starts to move!")
 
 /mob/living/simple_animal/hostile/mimic/crate/AttackingTarget()
 	. = ..()
@@ -79,9 +81,20 @@
 					"<span class='userdanger'>\The [src] knocks you down!</span>")
 
 /mob/living/simple_animal/hostile/mimic/crate/proc/trigger()
+	//KEEP IN MIND, this proc is only supposed to be used to change the stats of a mimic, not used to to do anything else
 	if(!rooted)
-		visible_message("<b>[src]</b> starts to move!")
-		rooted = TRUE
+		rooted = TRUE 			//Flipping to our other stance
+		melee_damage_upper = 20
+		melee_damage_lower = 15	//Aggressive
+		obj_damage = 20			//Aggressive
+		health = 150			//We become really fragile when in our aggressive stance
+		return
+	if(rooted)
+		rooted = FALSE 			//Flipping to our other stance
+		melee_damage_upper = 12
+		melee_damage_lower = 8	//Defensive
+		obj_damage = 8			//Defensive
+		health = 250			//We become really fragile when in our aggressive stance
 
 /mob/living/simple_animal/hostile/mimic/crate/adjustHealth(amount, updating_health = TRUE, forced = FALSE)
 	trigger()
@@ -89,13 +102,23 @@
 
 //I have no doubt that Cyberboss knows a better way to do this, I'm going to have Cyberboss tell me!
 /mob/living/simple_animal/hostile/mimic/crate/attackby(obj/item/I, mob/living/user, params)
+	//Being attacked by a item
 	. = ..()
-	visible_message("Attackby has been called")
-	attack_hand(user)
+	if (rooted)
+		visible_message("<span class='userdanger'><b>[src]</b> swallows your [I]!</span>")
+		qdel(I)
+		notransform = FALSE
 
 /mob/living/simple_animal/hostile/mimic/crate/attack_hand(mob/living/user)
+	//Being attaacked with a fist.
+	//NOTE: Shooting the mimic does not piss it off, its something that will just damage the mimic.
 	. = ..()
-	visible_message("attack_hand has been called")
+	if(rooted)
+		var/obj/item/bodypart/head/arm = user.get_bodypart("l_arm")
+		if(arm)
+			arm.dismember()
+		visible_message("<span class='userdanger'><b>[src]</b> rips your hand off!</span>")
+		notransform = FALSE
 	user.apply_damage(5, BRUTE)
 
 /mob/living/simple_animal/hostile/mimic/crate/LoseTarget()
@@ -294,19 +317,21 @@ GLOBAL_LIST_INIT(protected_objects, list(/obj/structure/table, /obj/structure/ca
 /datum/action/innate/mimic/root/Activate()
 	var/mob/living/simple_animal/hostile/mimic/crate/S = owner
 
-	if(S.rooted) //So long as we are not in that state
+	if(!S.rooted) //So long as we are not in that state
 		S.visible_message("<span class='userdanger'><b>[S]</b> rattles intensely before falling selent!</span>")
-
-		S.rooted = FALSE
+		
+		S.trigger()
 		S.icon_state = "crate"	//Change our icon back to camoflauge.
 		S.icon_living = "crate"
-		S.speed = -1
-		S.notransform = TRUE
-		S.density = TRUE
+		S.notransform = TRUE 	//we can no longer move!
 		return
-		//TODO: Add the other case, when we are allready in that state.
 
-	if(!S.rooted) //We are allready in that state
+	if(S.rooted) //We are allready in that state
 		to_chat(S,"You are allready rooted in place!")
+		S.trigger()
+		S.icon_state = "mimicopen"	//Change our icon back to camoflauge.
+		S.icon_living = "mimicopen"
+		S.notransform = FALSE
+		return
 
 
