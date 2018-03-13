@@ -8,7 +8,7 @@
 	flags_1 = CONDUCT_1
 	pressure_resistance = 5*ONE_ATMOSPHERE
 	layer = BELOW_OBJ_LAYER
-	armor = list(melee = 50, bullet = 70, laser = 70, energy = 100, bomb = 10, bio = 100, rad = 100, fire = 0, acid = 0)
+	armor = list("melee" = 50, "bullet" = 70, "laser" = 70, "energy" = 100, "bomb" = 10, "bio" = 100, "rad" = 100, "fire" = 0, "acid" = 0)
 	max_integrity = 50
 	integrity_failure = 20
 	var/rods_type = /obj/item/stack/rods
@@ -26,11 +26,11 @@
 	update_icon()
 
 /obj/structure/grille/update_icon()
-	if(QDELETED(src))
+	if(QDELETED(src) || broken)
 		return
 
 	var/ratio = obj_integrity / max_integrity
-	ratio = Ceiling(ratio*4) * 25
+	ratio = CEILING(ratio*4, 1) * 25
 
 	if(smooth)
 		queue_smooth(src)
@@ -137,11 +137,11 @@
 	add_fingerprint(user)
 	if(istype(W, /obj/item/wirecutters))
 		if(!shock(user, 100))
-			playsound(src, W.usesound, 100, 1)
+			W.play_tool_sound(src, 100)
 			deconstruct()
 	else if((istype(W, /obj/item/screwdriver)) && (isturf(loc) || anchored))
 		if(!shock(user, 90))
-			playsound(src, W.usesound, 100, 1)
+			W.play_tool_sound(src, 100)
 			anchored = !anchored
 			user.visible_message("<span class='notice'>[user] [anchored ? "fastens" : "unfastens"] [src].</span>", \
 								 "<span class='notice'>You [anchored ? "fasten [src] to" : "unfasten [src] from"] the floor.</span>")
@@ -183,6 +183,10 @@
 					WD = new/obj/structure/window/plasma/fulltile(drop_location()) //plasma window
 				else if(istype(W, /obj/item/stack/sheet/rglass))
 					WD = new/obj/structure/window/reinforced/fulltile(drop_location()) //reinforced window
+				else if(istype(W, /obj/item/stack/sheet/titaniumglass))
+					WD = new/obj/structure/window/shuttle(drop_location())
+				else if(istype(W, /obj/item/stack/sheet/plastitaniumglass))
+					WD = new/obj/structure/window/plastitanium(drop_location())
 				else
 					WD = new/obj/structure/window/fulltile(drop_location()) //normal window
 				WD.setDir(dir_to_set)

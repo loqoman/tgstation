@@ -3,13 +3,16 @@
 
 /obj/item/integrated_circuit/output/screen
 	name = "small screen"
-	desc = "This small screen can display a single piece of data, when the machine is examined closely."
+	extended_desc = " use &lt;br&gt; to start a new line"
+	desc = "Takes any data type as an input, and displays it to the user upon examining."
 	icon_state = "screen"
 	inputs = list("displayed data" = IC_PINTYPE_ANY)
 	outputs = list()
 	activators = list("load data" = IC_PINTYPE_PULSE_IN)
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	power_draw_per_use = 10
+	cooldown_per_use = 10
+	var/eol = "&lt;br&gt;"
 	var/stuff_to_display = null
 
 /obj/item/integrated_circuit/output/screen/disconnect_all()
@@ -17,7 +20,11 @@
 	stuff_to_display = null
 
 /obj/item/integrated_circuit/output/screen/any_examine(mob/user)
-	to_chat(user, "There is a little screen labeled '[name]', which displays [!isnull(stuff_to_display) ? "'[stuff_to_display]'" : "nothing"].")
+	var/shown_label = ""
+	if(displayed_name && displayed_name != name)
+		shown_label = " labeled '[displayed_name]'"
+
+	to_chat(user, "There is \a [src][shown_label], which displays [!isnull(stuff_to_display) ? "'[stuff_to_display]'" : "nothing"].")
 
 /obj/item/integrated_circuit/output/screen/do_work()
 	var/datum/integrated_io/I = inputs[1]
@@ -26,11 +33,11 @@
 		if(d)
 			stuff_to_display = "[d]"
 	else
-		stuff_to_display = I.data
+		stuff_to_display = replacetext("[I.data]", eol , "<br>")
 
 /obj/item/integrated_circuit/output/screen/medium
 	name = "screen"
-	desc = "This screen allows for people holding the device to see a piece of data."
+	desc = "Takes any data type as an input and displays it to the user upon examining, and to adjacent beings when pulsed."
 	icon_state = "screen_medium"
 	power_draw_per_use = 20
 
@@ -43,7 +50,7 @@
 
 /obj/item/integrated_circuit/output/screen/large
 	name = "large screen"
-	desc = "This screen allows for people able to see the device to see a piece of data."
+	desc = "Takes any data type as an input and displays it to the user upon examining, and to all nearby beings when pulsed."
 	icon_state = "screen_large"
 	power_draw_per_use = 40
 
@@ -54,7 +61,7 @@
 
 /obj/item/integrated_circuit/output/light
 	name = "light"
-	desc = "This light can turn on and off on command."
+	desc = "A basic light which can be toggled on/off when pulsed."
 	icon_state = "light"
 	complexity = 4
 	inputs = list()
@@ -79,24 +86,13 @@
 			assembly.set_light(0)
 	power_draw_idle = light_toggled ? light_brightness * 2 : 0
 
-/obj/item/integrated_circuit/output/light/advanced/update_lighting()
-	var/new_color = get_pin_data(IC_INPUT, 1)
-	var/brightness = get_pin_data(IC_INPUT, 2)
-
-	if(new_color && isnum(brightness))
-		brightness = Clamp(brightness, 0, 6)
-		light_rgb = new_color
-		light_brightness = brightness
-
-	..()
-
 /obj/item/integrated_circuit/output/light/power_fail() // Turns off the flashlight if there's no power left.
 	light_toggled = FALSE
 	update_lighting()
 
 /obj/item/integrated_circuit/output/light/advanced
 	name = "advanced light"
-	desc = "This light can turn on and off on command, in any color, and in various brightness levels."
+	desc = "A light that takes a hexadecimal color value and a brightness value, and can be toggled on/off with a pulse."
 	icon_state = "light_adv"
 	complexity = 8
 	inputs = list(
@@ -105,10 +101,20 @@
 	)
 	outputs = list()
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
-	origin_tech = list(TECH_ENGINEERING = 3, TECH_DATA = 3)
 
 /obj/item/integrated_circuit/output/light/advanced/on_data_written()
 	update_lighting()
+
+/obj/item/integrated_circuit/output/light/advanced/update_lighting()
+	var/new_color = get_pin_data(IC_INPUT, 1)
+	var/brightness = get_pin_data(IC_INPUT, 2)
+
+	if(new_color && isnum(brightness))
+		brightness = CLAMP(brightness, 0, 6)
+		light_rgb = new_color
+		light_brightness = brightness
+
+	..()
 
 /obj/item/integrated_circuit/output/sound
 	name = "speaker circuit"
@@ -125,24 +131,6 @@
 	activators = list("play sound" = IC_PINTYPE_PULSE_IN)
 	power_draw_per_use = 10
 	var/list/sounds = list()
-
-/obj/item/integrated_circuit/output/text_to_speech
-	name = "text-to-speech circuit"
-	desc = "A miniature speaker is attached to this component."
-	extended_desc = "This unit is more advanced than the plain speaker circuit, able to transpose any valid text to speech."
-	icon_state = "speaker"
-	complexity = 12
-	inputs = list("text" = IC_PINTYPE_STRING)
-	outputs = list()
-	activators = list("to speech" = IC_PINTYPE_PULSE_IN)
-	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
-	power_draw_per_use = 60
-
-/obj/item/integrated_circuit/output/text_to_speech/do_work()
-	text = get_pin_data(IC_INPUT, 1)
-	if(!isnull(text))
-		var/obj/O = assembly ? loc : assembly
-		O.say(strip_html_simple(text))
 
 /obj/item/integrated_circuit/output/sound/Initialize()
 	.= ..()
@@ -161,7 +149,7 @@
 		var/selected_sound = sounds[ID]
 		if(!selected_sound)
 			return
-		vol = Clamp(vol ,0 , 100)
+		vol = CLAMP(vol ,0 , 100)
 		playsound(get_turf(src), selected_sound, vol, freq, -1)
 
 /obj/item/integrated_circuit/output/sound/on_data_written()
@@ -169,9 +157,7 @@
 
 /obj/item/integrated_circuit/output/sound/beeper
 	name = "beeper circuit"
-	desc = "A miniature speaker is attached to this component.  This is often used in the construction of motherboards, which use \
-	the speaker to tell the user if something goes very wrong when booting up.  It can also do other similar synthetic sounds such \
-	as buzzing, pinging, chiming, and more."
+	desc = "Takes a sound name as an input, and will play said sound when pulsed. This circuit has a variety of beeps, boops, and buzzes to choose from."
 	sounds = list(
 		"beep"			= 'sound/machines/twobeep.ogg',
 		"chime"			= 'sound/machines/chime.ogg',
@@ -186,7 +172,7 @@
 
 /obj/item/integrated_circuit/output/sound/beepsky
 	name = "securitron sound circuit"
-	desc = "A miniature speaker is attached to this component.  Considered by some to be the essential component for a securitron."
+	desc = "Takes a sound name as an input, and will play said sound when pulsed. This circuit is similar to those used in Securitrons."
 	sounds = list(
 		"creep"			= 'sound/voice/bcreep.ogg',
 		"criminal"		= 'sound/voice/bcriminal.ogg',
@@ -198,11 +184,10 @@
 		"secure day"	= 'sound/voice/bsecureday.ogg',
 		)
 	spawn_flags = IC_SPAWN_RESEARCH
-	origin_tech = list(TECH_ENGINEERING = 2, TECH_DATA = 2, TECH_ILLEGAL = 1)
 
 /obj/item/integrated_circuit/output/sound/medbot
 	name = "medbot sound circuit"
-	desc = "A miniature speaker is attached to this component, used to annoy patients while they get pricked by a medbot."
+	desc = "Takes a sound name as an input, and will play said sound when pulsed. This circuit is often found in medical robots."
 	sounds = list(
 		"surgeon"		= 'sound/voice/msurgeon.ogg',
 		"radar"			= 'sound/voice/mradar.ogg',
@@ -221,11 +206,40 @@
 		"no"			= 'sound/voice/mno.ogg',
 		)
 	spawn_flags = IC_SPAWN_RESEARCH
-	origin_tech = list(TECH_ENGINEERING = 2, TECH_DATA = 2, TECH_BIO = 1)
+
+/obj/item/integrated_circuit/output/sound/vox
+	name = "ai vox sound circuit"
+	desc = "Takes a sound name as an input, and will play said sound when pulsed. This circuit is often found in AI announcement systems."
+	spawn_flags = IC_SPAWN_RESEARCH
+
+/obj/item/integrated_circuit/output/sound/vox/Initialize()
+	.= ..()
+	sounds = GLOB.vox_sounds
+	extended_desc = "The first input pin determines which sound is used. It uses the AI Vox Broadcast word list. So either experiment to find words that work, or ask the AI to help in figuring them out. The second pin determines the volume of sound that is played, and the third determines if the frequency of the sound will vary with each activation."
+
+/obj/item/integrated_circuit/output/text_to_speech
+	name = "text-to-speech circuit"
+	desc = "Takes any string as an input and will make the device say the string when pulsed."
+	extended_desc = "This unit is more advanced than the plain speaker circuit, able to transpose any valid text to speech."
+	icon_state = "speaker"
+	ext_cooldown = 2
+	complexity = 12
+	inputs = list("text" = IC_PINTYPE_STRING)
+	outputs = list()
+	activators = list("to speech" = IC_PINTYPE_PULSE_IN)
+	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
+	power_draw_per_use = 60
+
+/obj/item/integrated_circuit/output/text_to_speech/do_work()
+	text = get_pin_data(IC_INPUT, 1)
+	if(!isnull(text))
+		var/atom/movable/A = get_object()
+		A.say(sanitize(text))
+
 
 /obj/item/integrated_circuit/output/video_camera
 	name = "video camera circuit"
-	desc = "This small camera allows a remote viewer to see what it sees."
+	desc = "Takes a string as a name and a boolean to determine whether it is on, and uses this to be a camera linked to the research network."
 	extended_desc = "The camera is linked to the Research camera network."
 	icon_state = "video_camera"
 	w_class = WEIGHT_CLASS_SMALL
@@ -238,6 +252,7 @@
 	outputs = list()
 	activators = list()
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
+	action_flags = IC_ACTION_LONG_RANGE
 	power_draw_idle = 0 // Raises to 20 when on.
 	var/obj/machinery/camera/camera
 	var/updating = FALSE
@@ -245,7 +260,7 @@
 /obj/item/integrated_circuit/output/video_camera/New()
 	..()
 	camera = new(src)
-	camera.network = list("RD")
+	camera.network = list("rd")
 	on_data_written()
 
 /obj/item/integrated_circuit/output/video_camera/Destroy()
@@ -293,67 +308,65 @@
 
 /obj/item/integrated_circuit/output/led
 	name = "light-emitting diode"
-	desc = "This a LED that is lit whenever there is TRUE-equivalent data on its input."
+	desc = "RGB LED. Takes a boolean value in, and if the boolean value is 'true-equivalent', the LED will be marked as lit on examine."
 	extended_desc = "TRUE-equivalent values are: Non-empty strings, non-zero numbers, and valid refs."
 	complexity = 0.1
 	icon_state = "led"
-	inputs = list("lit" = IC_PINTYPE_BOOLEAN)
+	inputs = list(
+		"lit" = IC_PINTYPE_BOOLEAN,
+		"color" = IC_PINTYPE_COLOR
+	)
 	outputs = list()
 	activators = list()
+	inputs_default = list(
+		"2" = "#FF0000"
+	)
 	power_draw_idle = 0 // Raises to 1 when lit.
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
-	var/led_color
+	var/led_color = "#FF0000"
 
 /obj/item/integrated_circuit/output/led/on_data_written()
 	power_draw_idle = get_pin_data(IC_INPUT, 1) ? 1 : 0
+	led_color = get_pin_data(IC_INPUT, 2)
 
 /obj/item/integrated_circuit/output/led/power_fail()
 	set_pin_data(IC_INPUT, 1, FALSE)
 
 /obj/item/integrated_circuit/output/led/external_examine(mob/user)
-	var/text_output = list()
+	var/text_output = "There is "
 
-	// Doing all this work just to have a color-blind friendly output.
-	text_output += "There is "
-	if(name == displayed_name )
+	if(name == displayed_name)
 		text_output += "\an [name]"
 	else
-		text_output += "\an ["\improper[name]"] labeled '[displayed_name ]'"
-	text_output += " which is currently [(get_pin_data(IC_INPUT, 1)==1) ? "lit <font color=[led_color]>*</font>" : "unlit."]"
-	to_chat(user,jointext(text_output,null))
+		text_output += "\an ["\improper[name]"] labeled '[displayed_name]'"
+	text_output += " which is currently [get_pin_data(IC_INPUT, 1) ? "lit <font color=[led_color]>*</font>" : "unlit"]."
+	to_chat(user, text_output)
 
-/obj/item/integrated_circuit/output/led/red
-	name = "red LED"
-	led_color = "#FF0000"
+/obj/item/integrated_circuit/output/diagnostic_hud
+	name = "AR interface"
+	desc = "Takes an icon name as an input, and will update the status hud when data is written to it."
+	extended_desc = "Takes an icon name as an input, and will update the status hud when data is written to it, this means it can change the icon and have the icon stay that way even if the circuit is removed. The acceptable inputs are 'alert' and 'move'. Any input other than that will return the icon to its default state. The danger warning and offline status will appear over any input from this circuit."
+	var/list/icons = list(
+		"alert" = "hudalert",
+		"move" = "hudmove"
+		)
+	complexity = 1
+	icon_state = "led"
+	inputs = list(
+		"icon" = IC_PINTYPE_STRING
+	)
+	outputs = list()
+	activators = list()
+	power_draw_idle = 0
+	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/integrated_circuit/output/led/orange
-	name = "orange LED"
-	led_color = "#FF9900"
-
-/obj/item/integrated_circuit/output/led/yellow
-	name = "yellow LED"
-	led_color = "#FFFF00"
-
-/obj/item/integrated_circuit/output/led/green
-	name = "green LED"
-	led_color = "#008000"
-
-/obj/item/integrated_circuit/output/led/blue
-	name = "blue LED"
-	led_color = "#0000FF"
-
-/obj/item/integrated_circuit/output/led/purple
-	name = "purple LED"
-	led_color = "#800080"
-
-/obj/item/integrated_circuit/output/led/cyan
-	name = "cyan LED"
-	led_color = "#00FFFF"
-
-/obj/item/integrated_circuit/output/led/white
-	name = "white LED"
-	led_color = "#FFFFFF"
-
-/obj/item/integrated_circuit/output/led/pink
-	name = "pink LED"
-	led_color = "#FF00FF"
+/obj/item/integrated_circuit/output/diagnostic_hud/on_data_written()
+	var/ID = get_pin_data(IC_INPUT, 1)
+	var/selected_icon = icons[ID]
+	if(assembly)
+		if(selected_icon)
+			assembly.prefered_hud_icon = selected_icon
+		else
+			assembly.prefered_hud_icon = "hudstat"
+		//update the diagnostic hud
+		assembly.diag_hud_set_circuitstat()

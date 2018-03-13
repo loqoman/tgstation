@@ -49,9 +49,6 @@
 
 	var/obj/screen/click_catcher/void
 
-	// Used by html_interface module.
-	var/hi_last_pos
-
 	var/ip_intel = "Disabled"
 
 	//datum that controls the displaying and hiding of tooltips
@@ -69,3 +66,5 @@
 	var/datum/chatOutput/chatOutput
 
 	var/list/credits //lazy list of all credit object bound to this client
+
+	var/datum/player_details/player_details //these persist between logins/logouts during the same round.

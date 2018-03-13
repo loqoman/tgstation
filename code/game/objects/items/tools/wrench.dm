@@ -12,11 +12,11 @@
 	w_class = WEIGHT_CLASS_SMALL
 	usesound = 'sound/items/ratchet.ogg'
 	materials = list(MAT_METAL=150)
-	origin_tech = "materials=1;engineering=1"
+
 	attack_verb = list("bashed", "battered", "bludgeoned", "whacked")
 	tool_behaviour = TOOL_WRENCH
 	toolspeed = 1
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0, fire = 50, acid = 30)
+	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 50, "acid" = 30)
 
 /obj/item/wrench/suicide_act(mob/user)
 	user.visible_message("<span class='suicide'>[user] is beating [user.p_them()]self to death with [src]! It looks like [user.p_theyre()] trying to commit suicide!</span>")
@@ -42,7 +42,7 @@
 	icon_state = "wrench"
 	usesound = 'sound/effects/empulse.ogg'
 	toolspeed = 0.1
-	origin_tech = "materials=5;engineering=5;abductor=3"
+
 
 /obj/item/wrench/power
 	name = "hand drill"
@@ -53,7 +53,7 @@
 	righthand_file = 'icons/mob/inhands/equipment/tools_righthand.dmi'
 	usesound = 'sound/items/drill_use.ogg'
 	materials = list(MAT_METAL=150,MAT_SILVER=50,MAT_TITANIUM=25)
-	origin_tech = "materials=2;engineering=2" //done for balance reasons, making them high value for research, but harder to get
+ //done for balance reasons, making them high value for research, but harder to get
 	force = 8 //might or might not be too high, subject to change
 	w_class = WEIGHT_CLASS_SMALL
 	throwforce = 8
@@ -77,7 +77,7 @@
 	icon_state = "wrench_medical"
 	force = 2 //MEDICAL
 	throwforce = 4
-	origin_tech = "materials=1;engineering=1;biotech=3"
+
 	attack_verb = list("wrenched", "medicaled", "tapped", "jabbed", "whacked")
 
 /obj/item/wrench/medical/suicide_act(mob/living/user)

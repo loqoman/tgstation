@@ -47,28 +47,37 @@
 /obj/singularity/narsie/large/cult/Initialize()
 	. = ..()
 	GLOB.cult_narsie = src
-	deltimer(GLOB.blood_target_reset_timer)
-	GLOB.blood_target = src
+	var/list/all_cults = list()
+	for(var/datum/antagonist/cult/C in GLOB.antagonists)
+		if(!C.owner)
+			continue
+		all_cults |= C.cult_team
+	for(var/datum/team/cult/T in all_cults)
+		deltimer(T.blood_target_reset_timer)
+		T.blood_target = src
+		var/datum/objective/eldergod/summon_objective = locate() in T.objectives
+		if(summon_objective)
+			summon_objective.summoned = TRUE
 	for(var/datum/mind/cult_mind in SSticker.mode.cult)
 		if(isliving(cult_mind.current))
 			var/mob/living/L = cult_mind.current
 			L.narsie_act()
 	for(var/mob/living/player in GLOB.player_list)
-		if(player.stat != DEAD && (player.loc.z in GLOB.station_z_levels) && !iscultist(player))
+		if(player.stat != DEAD && player.loc && is_station_level(player.loc.z) && !iscultist(player) && !isanimal(player))
 			souls_needed[player] = TRUE
-	soul_goal = round(1 + LAZYLEN(souls_needed) * 0.6)
+	soul_goal = round(1 + LAZYLEN(souls_needed) * 0.75)
 	INVOKE_ASYNC(src, .proc/begin_the_end)
 
 /obj/singularity/narsie/large/cult/proc/begin_the_end()
 	sleep(50)
 	priority_announce("An acausal dimensional event has been detected in your sector. Event has been flagged EXTINCTION-CLASS. Directing all available assets toward simulating solutions. SOLUTION ETA: 60 SECONDS.","Central Command Higher Dimensional Affairs", 'sound/misc/airraid.ogg')
-	sleep(550)
-	priority_announce("Simulations on acausal dimensional event complete. Deploying solution package now. Deployment ETA: TWO MINUTES. ","Central Command Higher Dimensional Affairs")
+	sleep(500)
+	priority_announce("Simulations on acausal dimensional event complete. Deploying solution package now. Deployment ETA: ONE MINUTE. ","Central Command Higher Dimensional Affairs")
 	sleep(50)
 	set_security_level("delta")
 	SSshuttle.registerHostileEnvironment(src)
 	SSshuttle.lockdown = TRUE
-	sleep(1150)
+	sleep(600)
 	if(resolved == FALSE)
 		resolved = TRUE
 		sound_to_playing_players('sound/machines/alarm.ogg')
@@ -140,7 +149,7 @@
 		acquire(enemy)
 		return
 
-	for(var/mob/living/carbon/food in GLOB.living_mob_list) //we don't care about constructs or cult-Ians or whatever. cult-monkeys are fair game i guess
+	for(var/mob/living/carbon/food in GLOB.alive_mob_list) //we don't care about constructs or cult-Ians or whatever. cult-monkeys are fair game i guess
 		var/turf/pos = get_turf(food)
 		if(!pos || (pos.z != z))
 			continue
@@ -186,7 +195,6 @@
 	grav_pull = 0
 
 /obj/singularity/narsie/wizard/eat()
-	set background = BACKGROUND_ENABLED
 //	if(defer_powernet_rebuild != 2)
 //		defer_powernet_rebuild = 1
 	for(var/atom/X in urange(consume_range,src,1))

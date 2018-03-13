@@ -55,12 +55,12 @@
 		if(!user.transferItemToLoc(P, src))
 			return
 		to_chat(user, "<span class='notice'>You replace [src]'s [P].</span>")
-		P.loc = src
+		P.forceMove(src)
 		storedcutter = P
 		update_icon()
 		return
 	if(istype(P, /obj/item/screwdriver) && storedcutter)
-		playsound(src, P.usesound, 50, 1)
+		P.play_tool_sound(src)
 		to_chat(user, "<span class='notice'>[storedcutter] has been [cuttersecured ? "unsecured" : "secured"].</span>")
 		cuttersecured = !cuttersecured
 		return

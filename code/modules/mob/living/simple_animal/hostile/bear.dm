@@ -36,7 +36,7 @@
 	maxbodytemp = 1500
 
 	faction = list("russian")
-	gold_core_spawnable = 1
+	gold_core_spawnable = HOSTILE_SPAWN
 
 //SPACE BEARS! SQUEEEEEEEE~     OW! FUCK! IT BIT MY HAND OFF!!
 /mob/living/simple_animal/hostile/bear/Hudson
@@ -50,6 +50,7 @@
 	icon_living = "snowbear"
 	icon_dead = "snowbear_dead"
 	desc = "It's a polar bear, in space, but not actually in space."
+	weather_immunities = list("snow")
 
 /mob/living/simple_animal/hostile/bear/russian
 	name = "combat bear"

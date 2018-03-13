@@ -9,6 +9,7 @@
 	role_name = "random animal"
 	var/animals = 1
 	var/one = "one"
+	fakeable = TRUE
 
 /datum/round_event/ghost_role/sentience/announce(fake)
 	var/sentience_report = ""
@@ -17,7 +18,7 @@
 	var/pets = pick("animals/bots", "bots/animals", "pets", "simple animals", "lesser lifeforms", "\[REDACTED\]")
 	var/strength = pick("human", "moderate", "lizard", "security", "command", "clown", "low", "very low", "\[REDACTED\]")
 
-	sentience_report += "<br><br>Based on [data], we believe that [one] of the station's [pets] has developed [strength] level intelligence, and the ability to communicate."
+	sentience_report += "Based on [data], we believe that [one] of the station's [pets] has developed [strength] level intelligence, and the ability to communicate."
 
 	priority_announce(sentience_report,"[command_name()] Medium-Priority Update")
 
@@ -28,9 +29,9 @@
 	// find our chosen mob to breathe life into
 	// Mobs have to be simple animals, mindless and on station
 	var/list/potential = list()
-	for(var/mob/living/simple_animal/L in GLOB.living_mob_list)
+	for(var/mob/living/simple_animal/L in GLOB.alive_mob_list)
 		var/turf/T = get_turf(L)
-		if(!(T.z in GLOB.station_z_levels))
+		if(!T || !is_station_level(T.z))
 			continue
 		if(!(L in GLOB.player_list) && !L.mind)
 			potential += L

@@ -411,7 +411,9 @@
 /area/awaymission/cabin)
 "bv" = (
 /obj/structure/table/wood,
-/obj/machinery/chem_dispenser/drinks/beer,
+/obj/machinery/chem_dispenser/drinks/beer{
+	dir = 8
+	},
 /turf/open/floor/wood,
 /area/awaymission/cabin)
 "bw" = (
@@ -812,20 +814,20 @@
 /area/awaymission/cabin)
 "cR" = (
 /obj/machinery/door/poddoor/shutters{
-	id = 42;
+	id = "garage_cabin";
 	name = "garage door"
 	},
 /turf/open/floor/plating/snowed/temperatre,
 /area/awaymission/cabin)
 "cS" = (
 /obj/machinery/button/door{
-	id = 42;
+	id = "garage_cabin";
 	pixel_y = 24
 	},
 /turf/open/floor/plating/snowed/temperatre,
 /area/awaymission/cabin)
 "cT" = (
-/obj/vehicle/atv,
+/obj/vehicle/ridden/atv,
 /turf/open/floor/plating/snowed/temperatre,
 /area/awaymission/cabin)
 "cU" = (

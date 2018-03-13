@@ -62,7 +62,7 @@
 				"[user] starts to fix part of the microwave.", \
 				"<span class='notice'>You start to fix part of the microwave...</span>" \
 			)
-			if (do_after(user,20*O.toolspeed, target = src))
+			if (O.use_tool(src, user, 20))
 				user.visible_message( \
 					"[user] fixes part of the microwave.", \
 					"<span class='notice'>You fix part of the microwave.</span>" \
@@ -73,7 +73,7 @@
 				"[user] starts to fix part of the microwave.", \
 				"<span class='notice'>You start to fix part of the microwave...</span>" \
 			)
-			if (do_after(user,20*O.toolspeed, target = src))
+			if (O.use_tool(src, user, 20))
 				user.visible_message( \
 					"[user] fixes the microwave.", \
 					"<span class='notice'>You fix the microwave.</span>" \
@@ -81,7 +81,7 @@
 				src.icon_state = "mw"
 				src.broken = 0 // Fix it!
 				src.dirty = 0 // just to be sure
-				src.container_type = OPENCONTAINER_1
+				src.container_type = OPENCONTAINER
 				return 0 //to use some fuel
 		else
 			to_chat(user, "<span class='warning'>It's broken!</span>")
@@ -98,7 +98,7 @@
 			src.dirty = 0 // It's clean!
 			src.broken = 0 // just to be sure
 			src.icon_state = "mw"
-			src.container_type = OPENCONTAINER_1
+			src.container_type = OPENCONTAINER
 			src.updateUsrDialog()
 			return 1 // Disables the after-attack so we don't spray the floor/user.
 		else
@@ -119,7 +119,7 @@
 			src.dirty = 0 // It's clean!
 			src.broken = 0 // just to be sure
 			src.icon_state = "mw"
-			src.container_type = OPENCONTAINER_1
+			src.container_type = OPENCONTAINER
 
 	else if(src.dirty==100) // The microwave is all dirty so can't be used!
 		to_chat(user, "<span class='warning'>It's dirty!</span>")
@@ -167,6 +167,10 @@
 		return
 	user.set_machine(src)
 	interact(user)
+
+/obj/machinery/microwave/AltClick(mob/user)
+	if(user.canUseTopic(src, BE_CLOSE) && !(operating || broken > 0 || panel_open || !anchored || dirty == 100))
+		cook()
 
 /*******************
 *   Microwave Menu
@@ -277,14 +281,14 @@
 	operating = FALSE // Turn it off again aferwards
 	icon_state = "mw"
 	updateUsrDialog()
+	soundloop.stop()
 
 /obj/machinery/microwave/proc/stop()
-	soundloop.stop()
 	abort()
 
 /obj/machinery/microwave/proc/dispose()
 	for (var/obj/O in contents)
-		O.loc = src.loc
+		O.forceMove(drop_location())
 	to_chat(usr, "<span class='notice'>You dispose of the microwave contents.</span>")
 	updateUsrDialog()
 
@@ -293,7 +297,6 @@
 	icon_state = "mwbloody1" // Make it look dirty!!
 
 /obj/machinery/microwave/proc/muck_finish()
-	playsound(src.loc, 'sound/machines/ding.ogg', 50, 1)
 	visible_message("<span class='warning'>The microwave gets covered in muck!</span>")
 	dirty = 100 // Make it dirty so it can't be used util cleaned
 	icon_state = "mwbloody" // Make it look dirty too
@@ -303,6 +306,7 @@
 		if(prob(50))
 			new /obj/item/reagent_containers/food/snacks/badrecipe(src)
 			qdel(S)
+	soundloop.stop()
 
 /obj/machinery/microwave/proc/broke()
 	var/datum/effect_system/spark_spread/s = new
@@ -314,6 +318,7 @@
 	flags_1 = null //So you can't add condiments
 	operating = FALSE // Turn it off again aferwards
 	updateUsrDialog()
+	soundloop.stop()
 
 /obj/machinery/microwave/Topic(href, href_list)
 	if(..() || panel_open)

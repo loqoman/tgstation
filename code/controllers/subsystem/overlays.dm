@@ -2,15 +2,13 @@ SUBSYSTEM_DEF(overlays)
 	name = "Overlay"
 	flags = SS_TICKER
 	wait = 1
-	priority = 500
+	priority = FIRE_PRIORITY_OVERLAYS
 	init_order = INIT_ORDER_OVERLAY
-	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_SETUP
 
 	var/list/queue
 	var/list/stats
 	var/list/overlay_icon_state_caches
 	var/list/overlay_icon_cache
-	var/initialized = FALSE
 
 /datum/controller/subsystem/overlays/PreInit()
 	overlay_icon_state_caches = list()
@@ -29,7 +27,7 @@ SUBSYSTEM_DEF(overlays)
 
 
 /datum/controller/subsystem/overlays/Shutdown()
-	text2file("[GLOB.log_directory]/overlay.log", render_stats(stats))
+	text2file(render_stats(stats), "[GLOB.log_directory]/overlay.log")
 
 
 /datum/controller/subsystem/overlays/Recover()

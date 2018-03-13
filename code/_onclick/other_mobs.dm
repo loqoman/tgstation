@@ -25,7 +25,9 @@
 	if(override)
 		return
 
+	SendSignal(COMSIG_HUMAN_MELEE_UNARMED_ATTACK, A)
 	A.attack_hand(src)
+	SendSignal(COMSIG_HUMAN_MELEE_UNARMED_ATTACKBY, src)
 
 /atom/proc/attack_hand(mob/user)
 	return
@@ -61,6 +63,7 @@
 
 /atom/proc/attack_animal(mob/user)
 	return
+
 /mob/living/RestrainedClickOn(atom/A)
 	return
 
@@ -100,7 +103,7 @@
 							"<span class='userdanger'>[name] bites [ML]!</span>")
 			if(armor >= 2)
 				return
-			for(var/thing in viruses)
+			for(var/thing in diseases)
 				var/datum/disease/D = thing
 				ML.ForceContractDisease(D)
 		else

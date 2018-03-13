@@ -12,32 +12,29 @@
 //Returns an integer given a hex input, supports negative values "-ff"
 //skips preceding invalid characters
 //breaks when hittin invalid characters thereafter
-/proc/hex2num(hex)
+// If safe=TRUE, returns null on incorrect input strings instead of CRASHing
+/proc/hex2num(hex, safe=FALSE)
 	. = 0
-	if(istext(hex))
-		var/negative = 0
-		var/len = length(hex)
-		for(var/i=1, i<=len, i++)
-			var/num = text2ascii(hex,i)
-			switch(num)
-				if(48 to 57)
-					num -= 48	//0-9
-				if(97 to 102)
-					num -= 87	//a-f
-				if(65 to 70)
-					num -= 55	//A-F
-				if(45)
-					negative = 1//-
+	var/place = 1
+	for(var/i in length(hex) to 1 step -1)
+		var/num = text2ascii(hex, i)
+		switch(num)
+			if(48 to 57)
+				num -= 48	//0-9
+			if(97 to 102)
+				num -= 87	//a-f
+			if(65 to 70)
+				num -= 55	//A-F
+			if(45)
+				return . * -1 // -
+			else
+				if(safe)
+					return null
 				else
-					if(num)
-						break
-					else
-						continue
-			. *= 16
-			. += num
-		if(negative)
-			. *= -1
-	return .
+					CRASH("Malformed hex number")
+
+		. += num * place
+		place *= 16
 
 //Returns the hex value of a decimal number
 //len == length of returned string
@@ -72,6 +69,7 @@
 	return .
 
 //Splits the text of a file at seperator and returns them in a list.
+//returns an empty list if the file doesn't exist
 /world/proc/file2list(filename, seperator="\n", trim = TRUE)
 	if (trim)
 		return splittext(trim(file2text(filename)),seperator)
@@ -124,7 +122,7 @@
 //Converts an angle (degrees) into an ss13 direction
 /proc/angle2dir(degree)
 
-	degree = SimplifyDegrees(degree)
+	degree = SIMPLIFY_DEGREES(degree)
 	switch(degree)
 		if(0 to 22.5) //north requires two angle ranges
 			return NORTH
@@ -184,38 +182,40 @@
 			return ICON_OVERLAY
 
 //Converts a rights bitfield into a string
-/proc/rights2text(rights, seperator="", list/adds, list/subs)
+/proc/rights2text(rights, seperator="", prefix = "+")
+	seperator += prefix
 	if(rights & R_BUILDMODE)
-		. += "[seperator]+BUILDMODE"
+		. += "[seperator]BUILDMODE"
 	if(rights & R_ADMIN)
-		. += "[seperator]+ADMIN"
+		. += "[seperator]ADMIN"
 	if(rights & R_BAN)
-		. += "[seperator]+BAN"
+		. += "[seperator]BAN"
 	if(rights & R_FUN)
-		. += "[seperator]+FUN"
+		. += "[seperator]FUN"
 	if(rights & R_SERVER)
-		. += "[seperator]+SERVER"
+		. += "[seperator]SERVER"
 	if(rights & R_DEBUG)
-		. += "[seperator]+DEBUG"
+		. += "[seperator]DEBUG"
 	if(rights & R_POSSESS)
-		. += "[seperator]+POSSESS"
+		. += "[seperator]POSSESS"
 	if(rights & R_PERMISSIONS)
-		. += "[seperator]+PERMISSIONS"
+		. += "[seperator]PERMISSIONS"
 	if(rights & R_STEALTH)
-		. += "[seperator]+STEALTH"
+		. += "[seperator]STEALTH"
 	if(rights & R_POLL)
-		. += "[seperator]+POLL"
+		. += "[seperator]POLL"
 	if(rights & R_VAREDIT)
-		. += "[seperator]+VAREDIT"
+		. += "[seperator]VAREDIT"
 	if(rights & R_SOUNDS)
-		. += "[seperator]+SOUND"
+		. += "[seperator]SOUND"
 	if(rights & R_SPAWN)
-		. += "[seperator]+SPAWN"
-
-	for(var/verbpath in adds)
-		. += "[seperator]+[verbpath]"
-	for(var/verbpath in subs)
-		. += "[seperator]-[verbpath]"
+		. += "[seperator]SPAWN"
+	if(rights & R_AUTOLOGIN)
+		. += "[seperator]AUTOLOGIN"
+	if(rights & R_DBRANKS)
+		. += "[seperator]DBRANKS"
+	if(!.)
+		. = "NONE"
 	return .
 
 /proc/ui_style2icon(ui_style)
@@ -588,12 +588,16 @@
 		r+= num2hex(c)
 	return r
 
-/proc/hextostr(str)
+// Decodes hex to raw byte string.
+// If safe=TRUE, returns null on incorrect input strings instead of CRASHing
+/proc/hextostr(str, safe=FALSE)
 	if(!istext(str)||!str)
 		return
 	var/r
 	var/c
 	for(var/i = 1 to length(str)/2)
-		c= hex2num(copytext(str,i*2-1,i*2+1))
-		r+= ascii2text(c)
+		c = hex2num(copytext(str,i*2-1,i*2+1), safe)
+		if(isnull(c))
+			return null
+		r += ascii2text(c)
 	return r
